@@ -11,5 +11,15 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Dependency directories
+vendor/
+
+# JetBrains IDE
+.idea
+
+# System files
+.DS_Store
+
+# Build Artifacts
+synse-snmp-base
+dist/
