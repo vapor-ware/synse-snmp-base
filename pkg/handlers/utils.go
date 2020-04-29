@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/vapor-ware/synse-snmp-base/pkg/core"
 )
 
@@ -58,4 +59,35 @@ func getTargetConfig(data map[string]interface{}) (*core.SnmpTargetConfiguration
 		return nil, fmt.Errorf("failed to cast 'target_cfg' value (%T) to SnmpTargetConfiguration", cfgIface)
 	}
 	return cfg, nil
+}
+
+// parseEnum checks to see if the device value is an enumeration, and if so, converts
+// the value to the corresponding enumeration value based on a lookup table defined
+// in the device Data.
+func parseEnum(data map[string]interface{}, value interface{}) (interface{}, error) {
+	enumIface, isEnum := data["enum"]
+	if !isEnum {
+		return value, nil
+	}
+
+	log.WithFields(log.Fields{
+		"value": value,
+		"enum":  enumIface,
+	}).Debug("[snmp] device value is an enumeration")
+	enumMap, ok := enumIface.(map[interface{}]interface{})
+	if !ok {
+		return nil, fmt.Errorf("enumeration for device value is not properly defined (%T)", enumIface)
+	}
+	val, exists := enumMap[value]
+	if !exists {
+		log.WithFields(log.Fields{
+			"map":   enumMap,
+			"value": value,
+		}).Error("[snmp] device enum value does not exist in lookup")
+		return nil, fmt.Errorf("device value does not exist in enum map")
+	}
+	log.WithFields(log.Fields{
+		"value": value,
+	}).Debug("[snmp] using enumeration value")
+	return val, nil
 }

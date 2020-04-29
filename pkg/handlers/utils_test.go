@@ -91,3 +91,47 @@ func TestGetTargetConfig_BadType(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, targetCfg)
 }
+
+func TestParseEnum(t *testing.T) {
+	data := map[string]interface{}{
+		"enum": map[interface{}]interface{}{
+			1: "foo",
+			2: "bar",
+		},
+	}
+
+	val, err := parseEnum(data, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", val)
+}
+
+func TestParseEnum_NotAnEnum(t *testing.T) {
+	data := map[string]interface{}{}
+
+	val, err := parseEnum(data, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, val)
+}
+
+func TestParseEnum_BadEnumData(t *testing.T) {
+	data := map[string]interface{}{
+		"enum": "unexpected data",
+	}
+
+	val, err := parseEnum(data, 1)
+	assert.Error(t, err)
+	assert.Nil(t, val)
+}
+
+func TestParseEnum_NoEnumValue(t *testing.T) {
+	data := map[string]interface{}{
+		"enum": map[interface{}]interface{}{
+			1: "foo",
+			2: "bar",
+		},
+	}
+
+	val, err := parseEnum(data, 3)
+	assert.Error(t, err)
+	assert.Nil(t, val)
+}

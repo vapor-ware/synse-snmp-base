@@ -73,6 +73,13 @@ func readOnlyReadHandler(device *sdk.Device) ([]*output.Reading, error) {
 		value = result.Value
 	}
 
+	// Check if the device has enumerated values. If so, an "enum" map is present
+	// in the device Data. This is set via the device config.
+	value, err = parseEnum(device.Data, value)
+	if err != nil {
+		return nil, err
+	}
+
 	log.WithFields(log.Fields{
 		"value": value,
 	}).Debug("[snmp] final value")
