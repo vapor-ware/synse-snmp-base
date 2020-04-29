@@ -66,7 +66,6 @@ func NewSnmpBasePlugin(metadata *PluginMetadata) (*sdk.Plugin, error) {
 	err = plugin.RegisterDeviceHandlers(
 		&handlers.ReadOnly,
 		&handlers.ReadWrite,
-		&handlers.WriteOnly,
 	)
 	if err != nil {
 		return nil, err

@@ -11,15 +11,8 @@ import (
 	"github.com/vapor-ware/synse-snmp-base/pkg/core"
 )
 
-// ReadOnly is an SNMP device handler for OIDs which are read-only.
-var ReadOnly = sdk.DeviceHandler{
-	Name: "read-only",
-	Read: readOnlyReadHandler,
-}
-
-// readOnlyReadHandler is the function which handles Reads for the "read-only"
-// device handler.
-func readOnlyReadHandler(device *sdk.Device) ([]*output.Reading, error) {
+// readHandlerFunc is the function which handles Reads for SNMP device handlers.
+func readHandlerFunc(device *sdk.Device) ([]*output.Reading, error) {
 	if device == nil {
 		return nil, errors.New("unable to read from nil device")
 	}
