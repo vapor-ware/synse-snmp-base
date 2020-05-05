@@ -45,6 +45,46 @@ func (c *Client) GetOid(oid string) (*gosnmp.SnmpPDU, error) {
 	return &data, nil
 }
 
+// GetSupportedDevices gets all the OIDs for devices found on the target. This may not
+// always be the full set of devices that a MIB defines.
+//
+// This returns a map of OIDs to empty struct. This map should be used during device creation
+// to filter the MIB to only register those devices that a target supports. It is returned
+// as a map to make OID lookups easier than iterating over a slice. Presence in the map means
+// the device is supported, absence means it is not.
+func (c *Client) GetSupportedDevices(rootOid string) (map[string]struct{}, error) {
+	log.WithFields(log.Fields{
+		"rootOid": rootOid,
+	}).Debug("[snmp] getting supported devices for root OIO")
+
+	results, err := c.BulkWalkAll(rootOid)
+	if err != nil {
+		log.WithError(err).Error("[snmp] failed to bulk walk all")
+		return nil, err
+	}
+
+	log.WithFields(log.Fields{
+		"size": len(results),
+	}).Debug("[snmp] got bulk walk results")
+
+	oids := make(map[string]struct{})
+	for _, r := range results {
+		oid := r.Name
+		if strings.HasPrefix(oid, ".") {
+			oid = oid[1:]
+		}
+
+		log.WithFields(log.Fields{
+			"name":  oid,
+			"value": r.Value,
+			"type":  r.Type,
+		}).Debug("[snmp] collecting walk result")
+		oids[oid] = struct{}{}
+	}
+
+	return oids, nil
+}
+
 // Close the client connection.
 func (c *Client) Close() {
 	if c.Conn != nil {
@@ -176,8 +216,5 @@ func NewClient(cfg *SnmpTargetConfiguration) (*Client, error) {
 		},
 	}
 
-	log.WithFields(log.Fields{
-		"cfg": *c.GoSNMP,
-	}).Debug("[snmp] created new client")
 	return c, nil
 }

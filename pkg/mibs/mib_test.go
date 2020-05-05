@@ -9,15 +9,15 @@ import (
 )
 
 func TestNewMIB(t *testing.T) {
-	mib := NewMIB("name", &SnmpDevice{}, &SnmpDevice{}, &SnmpDevice{})
+	mib := NewMIB("name", "1.2.3", &SnmpDevice{}, &SnmpDevice{}, &SnmpDevice{})
 
 	assert.Equal(t, "name", mib.Name)
 	assert.Len(t, mib.Devices, 3)
 }
 
 func TestMIB_String(t *testing.T) {
-	mib := NewMIB("name", &SnmpDevice{})
-	assert.Equal(t, "[MIB name]", mib.String())
+	mib := NewMIB("name", "1.2.3", &SnmpDevice{})
+	assert.Equal(t, "[MIB name (1.2.3)]", mib.String())
 }
 
 func TestMIB_LoadDevices(t *testing.T) {
@@ -46,7 +46,13 @@ func TestMIB_LoadDevices(t *testing.T) {
 		Version: "v3",
 		Agent:   "localhost",
 	}
-	devices, err := m.LoadDevices(cfg)
+	devices, err := m.LoadDevices(
+		cfg,
+		map[string]struct{}{
+			"1.2.3.4": {},
+			"5.6.7.8": {},
+		},
+	)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, devices)
@@ -101,7 +107,12 @@ func TestMIB_LoadDevices_nilConfig(t *testing.T) {
 		},
 	}
 
-	devices, err := m.LoadDevices(nil)
+	devices, err := m.LoadDevices(
+		nil,
+		map[string]struct{}{
+			"1.2.3.4": {},
+		},
+	)
 	assert.Error(t, err)
 	assert.Nil(t, devices)
 }
@@ -112,11 +123,14 @@ func TestMIB_LoadDevices_noDevices(t *testing.T) {
 		Devices: []*SnmpDevice{},
 	}
 
-	devices, err := m.LoadDevices(&core.SnmpTargetConfiguration{
-		MIB:     "test-mib",
-		Version: "v3",
-		Agent:   "localhost",
-	})
+	devices, err := m.LoadDevices(
+		&core.SnmpTargetConfiguration{
+			MIB:     "test-mib",
+			Version: "v3",
+			Agent:   "localhost",
+		},
+		map[string]struct{}{},
+	)
 	assert.NoError(t, err)
 	assert.Empty(t, devices)
 }
@@ -135,11 +149,44 @@ func TestMIB_LoadDevices_deviceError(t *testing.T) {
 		},
 	}
 
-	devices, err := m.LoadDevices(&core.SnmpTargetConfiguration{
-		MIB:     "test-mib",
-		Version: "v3",
-		Agent:   "localhost",
-	})
+	devices, err := m.LoadDevices(
+		&core.SnmpTargetConfiguration{
+			MIB:     "test-mib",
+			Version: "v3",
+			Agent:   "localhost",
+		},
+		map[string]struct{}{
+			"1.2.3.4": {},
+		},
+	)
 	assert.Error(t, err)
 	assert.Nil(t, devices)
+}
+
+func TestMIB_LoadDevices_deviceNotSupported(t *testing.T) {
+	m := MIB{
+		Name: "test-mib",
+		Devices: []*SnmpDevice{
+			{
+				OID:     "1.2.3.4",
+				Info:    "test device 1",
+				Type:    "temperature",
+				Handler: "temperature",
+				Output:  "temperature",
+			},
+		},
+	}
+
+	devices, err := m.LoadDevices(
+		&core.SnmpTargetConfiguration{
+			MIB:     "test-mib",
+			Version: "v3",
+			Agent:   "localhost",
+		},
+		map[string]struct{}{
+			"1.2.3.5": {},
+		},
+	)
+	assert.NoError(t, err)
+	assert.Empty(t, devices)
 }

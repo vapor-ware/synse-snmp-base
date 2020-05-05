@@ -14,13 +14,15 @@ import (
 // MIBs are registered with the SNMP base plugin.
 type MIB struct {
 	Name    string
+	RootOid string
 	Devices []*SnmpDevice
 }
 
 // NewMIB creates a new MIB with the specified devices.
-func NewMIB(name string, devices ...*SnmpDevice) *MIB {
+func NewMIB(name string, rootOid string, devices ...*SnmpDevice) *MIB {
 	return &MIB{
 		Name:    name,
+		RootOid: rootOid,
 		Devices: devices,
 	}
 }
@@ -28,11 +30,11 @@ func NewMIB(name string, devices ...*SnmpDevice) *MIB {
 // String returns a human-readable string, useful for identifying the
 // MIB in logs.
 func (mib *MIB) String() string {
-	return fmt.Sprintf("[MIB %s]", mib.Name)
+	return fmt.Sprintf("[MIB %s (%s)]", mib.Name, mib.RootOid)
 }
 
 // LoadDevices loads Synse devices from the SNMP devices defined in the MIB.
-func (mib *MIB) LoadDevices(cfg *core.SnmpTargetConfiguration) ([]*sdk.Device, error) {
+func (mib *MIB) LoadDevices(cfg *core.SnmpTargetConfiguration, supported map[string]struct{}) ([]*sdk.Device, error) {
 	if cfg == nil {
 		return nil, errors.New("cannot load devices with nil SNMP target config")
 	}
@@ -44,6 +46,15 @@ func (mib *MIB) LoadDevices(cfg *core.SnmpTargetConfiguration) ([]*sdk.Device, e
 
 	var devices []*sdk.Device
 	for _, d := range mib.Devices {
+
+		if _, exists := supported[d.OID]; !exists {
+			log.WithFields(log.Fields{
+				"oid":   d.OID,
+				"agent": cfg.Agent,
+			}).Debug("[snmp] mib device not supported by agent; will not load")
+			continue
+		}
+
 		device, err := d.ToDevice()
 		if err != nil {
 			return nil, err
