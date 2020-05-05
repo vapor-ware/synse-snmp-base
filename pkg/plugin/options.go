@@ -74,7 +74,23 @@ func SnmpDeviceRegistrar(data map[string]interface{}) ([]*sdk.Device, error) {
 		}).Error("[snmp] specified MIB is not registered with the plugin")
 		return nil, fmt.Errorf("configured MIB not found")
 	}
-	d, err := mib.LoadDevices(config)
+
+	// Create an SNMP client for the configured target.
+	c, err := core.NewClient(config)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.Connect(); err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	supportedDevices, err := c.GetSupportedDevices(mib.RootOid)
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := mib.LoadDevices(config, supportedDevices)
 	if err != nil {
 		log.WithError(err).Error("[snmp] failed to load devices from MIB")
 		return nil, err
