@@ -15,7 +15,6 @@ builds:
       - -X github.com/vapor-ware/synse-sdk/sdk.PluginVersion={{ .Version }}
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
 archives:
