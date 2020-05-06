@@ -2,7 +2,7 @@
 # Synse SNMP Plugin Base
 #
 
-VERSION    := 0.1.0
+VERSION    := 0.1.1
 BIN_NAME   := synse-snmp-base
 
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2> /dev/null || true)
