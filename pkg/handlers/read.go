@@ -83,6 +83,6 @@ func readHandlerFunc(device *sdk.Device) ([]*output.Reading, error) {
 	}
 
 	return []*output.Reading{
-		o.MakeReading(value),
+		o.MakeReading(value).WithContext(device.Context),
 	}, nil
 }
