@@ -27,7 +27,7 @@ pipeline {
         stage('Test') {
           steps {
             container('golang') {
-              sh 'go test -cover -race ./...'
+              sh 'go test -short -cover -race ./...'
             }
           }
         }

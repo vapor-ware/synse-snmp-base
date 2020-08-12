@@ -33,7 +33,7 @@ clean:  ## Remove temporary files
 	rm -rf dist
 
 .PHONY: cover
-cover: test  ## Run tests and open an HTML coverage report
+cover: unit-test  ## Run tests and open an HTML coverage report
 	go tool cover -html=coverage.out
 
 .PHONY: dep
@@ -55,9 +55,18 @@ lint:  ## Lint project source files
 	golint -set_exit_status ./pkg/...
 
 .PHONY: test
-test:  ## Run project tests
+test: unit-test integration-test ## Run all project tests
+
+.PHONY: unit-test
+unit-test:  ## Run project unit tests
 	@ # Note: this requires go1.10+ in order to do multi-package coverage reports
-	go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	@echo "--> Running Unit Tests"
+	go test -short -race -coverprofile=coverage.out -covermode=atomic ./...
+
+.PHONY: integration-test
+integration-test:  ## Run project integrationt tests
+	@echo "--> Running Integration Tests"
+	@./scripts/integration.sh
 
 .PHONY: version
 version:  ## Print the version of the plugin

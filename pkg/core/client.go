@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/soniah/gosnmp"
@@ -28,6 +29,7 @@ type Client struct {
 // GetOid gets the value for a specified OID.
 func (c *Client) GetOid(oid string) (*gosnmp.SnmpPDU, error) {
 	if !c.isConnected {
+		log.Debug("[snmp] client establishing connection with agent")
 		if err := c.Connect(); err != nil {
 			return nil, err
 		}
@@ -35,6 +37,7 @@ func (c *Client) GetOid(oid string) (*gosnmp.SnmpPDU, error) {
 
 	result, err := c.Get([]string{oid})
 	if err != nil {
+		log.WithError(err).Error("[snmp] client failed to get OID")
 		return nil, err
 	}
 
@@ -102,6 +105,8 @@ func NewClient(cfg *SnmpTargetConfiguration) (*Client, error) {
 		return nil, err
 	}
 
+	log.WithField("version", version).Debug("[snmp] creating new client")
+
 	// If configured to use SNMP v3, verify the security parameters.
 	var securityModel gosnmp.SnmpV3SecurityModel
 	var msgFlags gosnmp.SnmpV3MsgFlags
@@ -131,6 +136,7 @@ func NewClient(cfg *SnmpTargetConfiguration) (*Client, error) {
 				privProto = gosnmp.NoPriv
 			)
 			if cfg.Security.Authentication != nil {
+				log.Debug("[snmp] parsing client auth configuration")
 				authPass = cfg.Security.Authentication.Passphrase
 				authProto, err = GetAuthProtocol(cfg.Security.Authentication.Protocol)
 				if err != nil {
@@ -138,6 +144,7 @@ func NewClient(cfg *SnmpTargetConfiguration) (*Client, error) {
 				}
 			}
 			if cfg.Security.Privacy != nil {
+				log.Debug("[snmp] parsing client privacy configuration")
 				privPass = cfg.Security.Privacy.Passphrase
 				privProto, err = GetPrivProtocol(cfg.Security.Privacy.Protocol)
 				if err != nil {
@@ -199,19 +206,32 @@ func NewClient(cfg *SnmpTargetConfiguration) (*Client, error) {
 		"transport": transport,
 	}).Debug("[snmp] parsed client agent config")
 
+	// Use a default timeout of 2s if one is not already set.
+	timeout := 2 * time.Second
+	if cfg.Timeout != 0 {
+		timeout = cfg.Timeout
+	}
+
+	// Use a default of 3 retries if not already configured.
+	retries := 3
+	if cfg.Retries != 0 {
+		retries = cfg.Retries
+	}
+
 	c := &Client{
 		GoSNMP: &gosnmp.GoSNMP{
 			Version:            version,
 			Target:             u.Hostname(),
 			Port:               uint16(port),
 			Transport:          transport,
-			Timeout:            cfg.Timeout,
-			Retries:            cfg.Retries,
+			Timeout:            timeout,
+			Retries:            retries,
 			Community:          cfg.Community,
 			MsgFlags:           msgFlags,
 			SecurityModel:      securityModel,
 			SecurityParameters: securityParams,
 			ContextName:        contextName,
+			ExponentialTimeout: true,
 			MaxOids:            gosnmp.MaxOids,
 		},
 	}
