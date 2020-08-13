@@ -54,8 +54,8 @@ github-tag:  ## Create and push a tag with the current version
 lint:  ## Lint project source files
 	golint -set_exit_status ./pkg/...
 
-.PHONY: test
-test: unit-test integration-test ## Run all project tests
+.PHONY: test-all
+test-all: unit-test integration-test  ## Run all project tests
 
 .PHONY: unit-test
 unit-test:  ## Run project unit tests
@@ -77,3 +77,13 @@ help:  ## Print usage information
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 
 .DEFAULT_GOAL := help
+
+
+# Targets for Jenkins CI
+
+.PHONY: test
+test: unit-test
+
+.PHONY: ci-integration-test
+ci-integration-test:
+	go test -run Integration -coverprofile=coverage.out -covermode=atomic ./...
