@@ -61,7 +61,7 @@ test-all: unit-test integration-test  ## Run all project tests
 unit-test:  ## Run project unit tests
 	@ # Note: this requires go1.10+ in order to do multi-package coverage reports
 	@echo "--> Running Unit Tests"
-	go test -short -race -coverprofile=coverage.out -covermode=atomic ./...
+	go test -v -short -race -coverprofile=coverage.out -covermode=atomic ./...
 
 .PHONY: integration-test
 integration-test:  ## Run project integrationt tests

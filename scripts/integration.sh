@@ -12,7 +12,7 @@
 docker-compose -f configs/integration-test.yaml up -d
 sleep 2
 
-go test -run Integration -coverprofile=coverage.out -covermode=atomic ./...
+go test -v -run Integration -coverprofile=coverage.out -covermode=atomic ./...
 rc=$?
 
 if [[ ${rc} -ne 0 ]]; then

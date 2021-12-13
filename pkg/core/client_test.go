@@ -443,7 +443,7 @@ func TestClientGetSupportedDevicesIntegration(t *testing.T) {
 	// Root OID for the UPS MIB, used by the emulator.
 	devices, err := client.GetSupportedDevices("1.3.6.1.2.1.33")
 	assert.NoError(t, err)
-	assert.Len(t, devices, 60)
+	assert.Len(t, devices, 61)
 
 	expectedOIDs := []string{
 		"1.3.6.1.2.1.33.1.1.1.0",
